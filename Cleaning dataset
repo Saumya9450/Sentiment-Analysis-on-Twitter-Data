@@ -1,0 +1,84 @@
+# Import necessary libraries for text data preprocessing
+import os
+import re
+import nltk
+import spacy
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+from nltk.corpus import stopwords
+# Downloading necessary resources for NLTK
+nltk.download('punkt')  # Tokenization tool
+nltk.download('stopwords')  # Common stopwords
+
+# Defining and refining the set of English stopwords
+stop_words = set(stopwords.words('english'))
+# Removing some stopwords that may carry important sentiment or meaning
+stop_words = [i for i in stop_words if i not in ['not','until','against','up', 'down', 'no', 'nor',"aren't", 'couldn', "couldn't", 'didn', "didn't", 'doesn', "doesn't", 'hadn',
+                                                "hadn't", 'hasn', "hasn't", 'haven', "haven't", 'isn', "isn't", 'ma', 'mightn', "mightn't", 'mustn', "mustn't", 'needn', "needn't", 
+                                                 'shan', "shan't", 'shouldn', "shouldn't", 'wasn', "wasn't", 'weren', "weren't", 'won', "won't", 'wouldn', "wouldn't", "don't"]]
+# Reading a CSV file containing sentiment data, skipping bad lines
+df = pd.read_csv('/kaggle/input/sentiment140/training.1600000.processed.noemoticon.csv', encoding="latin", header=None, on_bad_lines='skip')
+
+# Renaming columns for better clarity
+df.rename(columns={0: 'labels', 5: 'tweets'}, inplace=True)
+
+# Dropping unnecessary columns from the DataFrame
+df.drop([1, 2, 3, 4], axis=1, inplace=True)
+
+# Replacing label 4 (positive sentiment) with 1 for uniformity
+df['labels'] = df['labels'].replace(4, 1)
+
+# Randomly shuffling the DataFrame and selecting a subset of 10,000 rows
+df = df.sample(frac=1)
+df = df.head(10000)
+
+# Displaying the first few rows of the DataFrame
+df.head()
+# Function to get the number of words in a tweet
+def get_word_len(tweet):
+    return len(tweet.split(' '))
+
+# Function to get the number of characters in a tweet
+def get_char_len(tweet):
+    return len(tweet)
+
+# Function to preprocess a tweet
+def preprocess_tweet(tweet):
+    # Convert the tweet to lowercase
+    tweet = tweet.lower()
+    
+    # Remove URLs from the tweet
+    tweet = re.sub(r"http\S+|www\S+|https\S+", '', tweet, flags=re.MULTILINE)
+    
+    # Remove mentions (e.g., @username) from the tweet
+    tweet = re.sub(r'@\w+', '', tweet)
+    
+    # Remove special characters and punctuation from the tweet
+    tweet = re.sub(r'[^\w\s#]', '', tweet)
+    
+    # Lemmatize the words using spaCy
+    tokens = [token.lemma_ for token in nlp(tweet)]
+    
+    # Remove stop words
+    tokens = [token for token in tokens if token not in stop_words]
+    
+    # Remove single-character tokens
+    tokens = [token for token in tokens if len(token) > 1]
+    
+    # Join the processed tokens to form the cleaned tweet
+    processed_tweet = ' '.join(tokens)
+    
+    return processed_tweet
+
+# Apply the preprocess_tweet function to each tweet in the dataframe
+df['clean_tweets'] = [preprocess_tweet(tw) for tw in tqdm(df['tweets'], position=0, leave=True)]
+
+# Calculate the number of words in each cleaned tweet and store it in a new column
+df['tweet_words_length'] = df['clean_tweets'].apply(get_word_len)
+
+# Calculate the number of characters in each cleaned tweet and store it in a new column
+df['tweet_chars_length'] = df['clean_tweets'].apply(get_char_len)
+
+# Display the first few rows of the dataframe
+df.head()
