@@ -1,0 +1,89 @@
+# Count the number of positive and negative tweets in the dataframe
+positive_count = df[df['labels'] == 1].shape[0]
+negative_count = df[df['labels'] == 0].shape[0]
+
+# Create a pie chart using Plotly Express to visualize the distribution of positive and negative tweets
+fig = px.pie(
+    values=[positive_count, negative_count],  # Values represent the counts of positive and negative tweets
+    title='Distribution of Positive and Negative Tweets',  # Title of the pie chart
+    names=['Positive', 'Negative'],  # Labels for the two categories
+    hover_name=['Positive', 'Negative'],  # Hover information for each category
+    opacity=.9,  # Opacity of the pie chart
+    template='simple_white'  # Plotly template for the chart
+)
+
+# Display the pie chart
+fig.show()
+# Set up a figure with a specified size
+plt.figure(figsize=(20, 8))
+
+# Define stopwords for WordCloud (common words to exclude)
+STOPWORDS = ['im','today','really','need','tonight']
+
+# Plot two subplots side by side
+plt.subplot(1, 2, 1)
+
+# Generate and display a WordCloud for positive tweets
+wordcloud_1 = WordCloud(
+    width=1200, height=800, max_words=1000, contour_width=2,
+    background_color='white', stopwords=STOPWORDS, max_font_size=180,
+    colormap='viridis'
+).generate(' '.join(df[df['labels'] == 1]['clean_tweets']))
+
+plt.imshow(wordcloud_1, interpolation='bilinear')
+plt.axis('off')
+plt.title('Positives')
+
+# Plot the second subplot
+plt.subplot(1, 2, 2)
+
+# Generate and display a WordCloud for negative tweets
+wordcloud_2 = WordCloud(
+    width=1200, height=800, max_words=1000, contour_width=2,
+    background_color='black', stopwords=STOPWORDS, max_font_size=180,
+    colormap='viridis'
+).generate(' '.join(df[df['labels'] == 0]['clean_tweets']))
+
+plt.imshow(wordcloud_2, interpolation='bilinear')
+plt.axis('off')
+plt.title('Negatives')
+
+# Turn off axis for the entire plot
+plt.axis('off')
+
+# Adjust layout for better spacing
+plt.tight_layout()
+
+# Display the plot
+plt.show()
+# Create distribution plots for word count and character count for positive and negative tweets
+fig_words = ff.create_distplot(
+    [df[df['labels'] == 1]['tweet_words_length'], df[df['labels'] == 0]['tweet_words_length']],
+    ['Positive', 'Negative'],
+    bin_size=25,
+    show_hist=False,
+    show_rug=False
+)
+
+fig_chars = ff.create_distplot(
+    [df[df['labels'] == 1]['tweet_chars_length'], df[df['labels'] == 0]['tweet_chars_length']],
+    ['Positive', 'Negative'],
+    bin_size=25,
+    show_hist=False,
+    show_rug=False
+)
+
+# Set titles and labels for the distribution plots
+fig_chars.update_layout(title="Distribution Plot on Character Count", xaxis_title="Number of Characters", yaxis_title="Frequency")
+fig_words.update_layout(title="Distribution Plot on Word Count", xaxis_title="Number of Words", yaxis_title="Frequency")
+
+# Combine the plots in a 2-column layout
+fig = make_subplots(rows=1, cols=2, subplot_titles=["Word Count", "Character Count"])
+fig.add_trace(fig_words['data'][0], row=1, col=1)
+fig.add_trace(fig_words['data'][1], row=1, col=1)
+fig.add_trace(fig_chars['data'][0], row=1, col=2)
+fig.add_trace(fig_chars['data'][1], row=1, col=2)
+
+# Update overall layout and show the plot
+fig.update_layout(title_text="Distribution Plots - Word Count vs Character Count", showlegend=True, font=dict(family="Arial", size=15, color="black"))
+fig.show()
