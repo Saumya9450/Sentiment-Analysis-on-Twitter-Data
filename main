@@ -1,0 +1,81 @@
+# Splitting the dataset into training and testing sets with an 80-20 split
+x_train, x_test, y_train, y_test = train_test_split(df['clean_tweets'], df['labels'], test_size=0.2, random_state=42)
+
+# Further splitting the test set into validation and final test sets with a 50-50 split
+x_val, x_test, y_val, y_test = train_test_split(x_test, y_test, test_size=0.5)
+
+# Creating a pie chart to visualize the distribution of tweet counts in training, testing, and validation sets
+fig = px.pie(values=[len(x_train), len(x_test), len(x_val)], title='Distribution of Training, Testing, and Validation Tweets', 
+             names=['Training', 'Testing', 'Validation'], hover_name=['Training', 'Testing', 'Validation'], opacity=0.9, template='simple_white')
+
+# Displaying the pie chart
+fig.show()
+# Configuration for training a neural network: 10 epochs, input sequence length of 20, 
+# batch size of 64, 80% training data, and 100-dimensional word embeddings.
+epochs_ = 10
+seq_len = 20
+batch_size_ = 64
+training_size = 0.8
+embedding_len = 100
+# Using CountVectorizer with binary encoding for tweets
+vec = CountVectorizer(binary=True)
+vec = vec.fit(df['clean_tweets'])
+
+# Transforming and converting tweets into arrays
+enc_tweets = vec.transform(df['clean_tweets']).toarray()
+
+# Splitting the data into training and testing sets
+x_train, x_test, y_train, y_test = train_test_split(enc_tweets, df['labels'], test_size=training_size, random_state=42)
+x_val, x_test, y_val, y_test = train_test_split(x_test, y_test, test_size=0.5)
+
+# Building a neural network model with multiple dense layers and dropout for regularization
+model = Sequential()
+model.add(Dense(2048, activation='relu', input_shape=(enc_tweets.shape[1],)))
+model.add(Dense(512, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(128, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(32, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(1, activation='sigmoid'))
+
+# Compiling the model using binary crossentropy loss and Adam optimizer with a specified learning rate
+model.compile(loss='binary_crossentropy', optimizer=Adam(learning_rate=0.0001), metrics=['accuracy'])
+
+# Training the model and storing the training history
+history_1 = model.fit(x_train, y_train, epochs=epochs_, batch_size=batch_size_, validation_data=(x_val, y_val))
+
+# Evaluating and printing the model's accuracy on the testing data
+print('\n')
+print("Model Evaluation on Testing Data: ", round(model.evaluate(x_test, y_test)[1] * 100, 2))
+# Using CountVectorizer without binary encoding for tweets
+vec = CountVectorizer(binary=False)
+vec = vec.fit(df['clean_tweets'])
+
+# Transforming and converting tweets into arrays
+enc_tweets = vec.transform(df['clean_tweets']).toarray()
+
+# Splitting the data into training and testing sets
+x_train, x_test, y_train, y_test = train_test_split(enc_tweets, df['labels'], test_size=training_size, random_state=42)
+x_val, x_test, y_val, y_test = train_test_split(x_test, y_test, test_size=0.5)
+
+# Building a neural network model with multiple dense layers and dropout for regularization
+model = Sequential()
+model.add(Dense(2048, activation='relu', input_shape=(enc_tweets.shape[1],)))
+model.add(Dense(512, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(128, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(32, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(1, activation='sigmoid'))
+
+# Compiling the model using binary crossentropy loss and Adam optimizer with a specified learning rate
+model.compile(loss='binary_crossentropy', optimizer=Adam(learning_rate=0.0001), metrics=['accuracy'])
+
+# Training the model and storing the training history
+history_2 = model.fit(x_train, y_train, epochs=epochs_, batch_size=batch_size_, validation_data=(x_val, y_val))
+
+# Evaluating and printing the model's accuracy on the testing data
+print('\n')
+print("Model Evaluation on Testing Data: ", round(model.evaluate(x_test, y_test)[1] * 100, 2))
